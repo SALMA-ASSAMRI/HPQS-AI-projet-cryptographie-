@@ -1,0 +1,8 @@
+cryptography
+oqs
+pandas
+psutil
+scikit-learn
+joblib
+matplotlib
+streamlit
