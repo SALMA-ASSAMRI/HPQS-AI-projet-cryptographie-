@@ -47,7 +47,6 @@ K2             ──┤ XOR ──► HKDF ──► clé AES ──► AES-256
 =======
 Exécution :
 
->>>>>>> fc4e3a561acc63a8570a0b9658e545346330d94d
 ```bash
 python crypto_module.py
 ```
