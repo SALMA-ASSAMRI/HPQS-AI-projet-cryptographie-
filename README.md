@@ -34,7 +34,7 @@ K2             ──┤ XOR ──► HKDF ──► clé AES ──► AES-256
 | `encrypt_K2_with_RSA()` | Chiffre K2 avec RSA-OAEP SHA-256 |
 | `fuse_secrets_HKDF()` | Fusionne K1 XOR K2 via HKDF SHA-256 |
 | `hybrid_encrypt()` | Chiffre un message complet (fonction principale) |
-
+Exécution :
 
 ```bash
 python crypto_module.py
