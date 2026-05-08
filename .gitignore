@@ -12,3 +12,6 @@ __pycache__/
 *.pyc
 venv/
 venv_hpqs/
+anomaly_detection_backup.py
+metrics_collector_backup.py
+metrics_old.csv
