@@ -2,6 +2,7 @@
 # app.py — Module 5
 # Projet HPQS-AI — Dashboard Streamlit propre et lisible
 # Salma A + Nabila B
+# Chiffrement + Déchiffrement avec deux boutons séparés
 # ============================================================
 
 import os
@@ -192,6 +193,30 @@ st.markdown(
             margin: 14px 0;
         }
 
+        .crypto-box {
+            background: #ffffff;
+            border: 1px solid #dbe3ef;
+            border-radius: 18px;
+            padding: 18px;
+            margin-top: 14px;
+            margin-bottom: 18px;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+        }
+
+        .crypto-label {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .crypto-value {
+            color: #0f172a;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+
         div.stButton > button {
             background: linear-gradient(135deg, #0f172a, #334155);
             color: white !important;
@@ -207,7 +232,6 @@ st.markdown(
             box-shadow: 0 14px 26px rgba(15, 23, 42, 0.24);
         }
 
-        /* Zone d'écriture du message — texte bien visible */
         div[data-testid="stTextArea"] textarea {
             background-color: #ffffff !important;
             color: #0f172a !important;
@@ -342,6 +366,52 @@ def html_metric(label, value):
     )
 
 
+def init_crypto_state():
+    default_values = {
+        "crypto_bundle": None,
+        "rsa_private_key": None,
+        "mlkem_secret_key": None,
+        "kem_number": None,
+        "original_message": None,
+        "selected_kem": None,
+        "encrypt_time": None,
+        "decrypt_time": None,
+        "memory_usage": None,
+        "ciphertext_size": None,
+        "message_encrypted": False,
+        "message_decrypted": False,
+        "decrypted_message": None,
+        "session_saved": False
+    }
+
+    for key, value in default_values.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+
+def reset_crypto_state():
+    keys_to_reset = [
+        "crypto_bundle",
+        "rsa_private_key",
+        "mlkem_secret_key",
+        "kem_number",
+        "original_message",
+        "selected_kem",
+        "encrypt_time",
+        "decrypt_time",
+        "memory_usage",
+        "ciphertext_size",
+        "decrypted_message"
+    ]
+
+    for key in keys_to_reset:
+        st.session_state[key] = None
+
+    st.session_state.message_encrypted = False
+    st.session_state.message_decrypted = False
+    st.session_state.session_saved = False
+
+
 def afficher_sessions_precedentes():
     df = charger_sessions()
 
@@ -389,6 +459,13 @@ def afficher_sessions_precedentes():
             st.bar_chart(df["kem_level"].value_counts())
         else:
             st.info("Aucune donnée ML-KEM disponible.")
+
+
+# ============================================================
+# INITIALISATION SESSION
+# ============================================================
+
+init_crypto_state()
 
 
 # ============================================================
@@ -478,12 +555,12 @@ st.markdown("---")
 
 
 # ============================================================
-# CHIFFREMENT
+# CHIFFREMENT + DÉCHIFFREMENT
 # ============================================================
 
-st.markdown('<div class="section-title">Chiffrement du message</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Chiffrement et déchiffrement du message</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="section-subtitle">Entrez un message pour tester le chiffrement hybride et vérifier le résultat IA.</div>',
+    '<div class="section-subtitle">Entrez un message, chiffrez-le, puis utilisez le bouton de déchiffrement pour retrouver le message original.</div>',
     unsafe_allow_html=True
 )
 
@@ -492,7 +569,17 @@ message = st.text_area(
     placeholder="Exemple : Bonjour, ceci est un test HPQS-AI"
 )
 
-chiffrer = st.button("Chiffrer le message", type="primary")
+col_encrypt, col_reset = st.columns([1, 4])
+
+with col_encrypt:
+    chiffrer = st.button("Chiffrer le message", type="primary")
+
+with col_reset:
+    reset = st.button("Réinitialiser")
+
+if reset:
+    reset_crypto_state()
+    st.rerun()
 
 
 if chiffrer:
@@ -515,98 +602,147 @@ if chiffrer:
 
         end_encrypt = time.time()
 
-        start_decrypt = time.time()
-
-        decrypted_message = hybrid_decrypt(
-            bundle,
-            rsa_private_key,
-            mlkem_secret_key,
-            kem_number
-        )
-
-        end_decrypt = time.time()
-
         encrypt_time = round(end_encrypt - start_encrypt, 6)
-        decrypt_time = round(end_decrypt - start_decrypt, 6)
         memory_usage = 112.0
         ciphertext_size = len(bundle["ciphertext"])
 
-        ai_result = resultat_ia_simple(
-            encrypt_time,
-            decrypt_time,
-            memory_usage,
-            ciphertext_size
-        )
+        st.session_state.crypto_bundle = bundle
+        st.session_state.rsa_private_key = rsa_private_key
+        st.session_state.mlkem_secret_key = mlkem_secret_key
+        st.session_state.kem_number = kem_number
+        st.session_state.original_message = message
+        st.session_state.selected_kem = recommended_kem
+        st.session_state.encrypt_time = encrypt_time
+        st.session_state.decrypt_time = None
+        st.session_state.memory_usage = memory_usage
+        st.session_state.ciphertext_size = ciphertext_size
+        st.session_state.message_encrypted = True
+        st.session_state.message_decrypted = False
+        st.session_state.decrypted_message = None
+        st.session_state.session_saved = False
 
         st.markdown(
             '<div class="status-success">Message chiffré avec succès.</div>',
             unsafe_allow_html=True
         )
 
-        st.markdown('<div class="section-title">Schéma cryptographique</div>', unsafe_allow_html=True)
 
-        schema1, schema2, schema3 = st.columns(3)
+if st.session_state.message_encrypted:
 
-        with schema1:
-            st.info("RSA-2048\n\nProtection du secret classique K2")
+    st.markdown('<div class="section-title">Schéma cryptographique</div>', unsafe_allow_html=True)
 
-        with schema2:
-            st.info(f"{recommended_kem}\n\nEncapsulation du secret post-quantique K1")
+    schema1, schema2, schema3 = st.columns(3)
 
-        with schema3:
-            st.info("AES-256-GCM\n\nChiffrement symétrique du message")
+    with schema1:
+        st.info("RSA-2048\n\nProtection du secret classique K2")
 
-        st.markdown('<div class="section-title">Métriques de la session</div>', unsafe_allow_html=True)
+    with schema2:
+        st.info(f"{st.session_state.selected_kem}\n\nEncapsulation du secret post-quantique K1")
 
-        m1, m2, m3, m4 = st.columns(4)
+    with schema3:
+        st.info("AES-256-GCM\n\nChiffrement symétrique du message")
 
-        with m1:
-            st.metric("Chiffrement", f"{encrypt_time} s")
+    st.markdown('<div class="section-title">Message chiffré</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Le message est affiché sous forme hexadécimale tronquée pour rester lisible.</div>',
+        unsafe_allow_html=True
+    )
 
-        with m2:
-            st.metric("Déchiffrement", f"{decrypt_time} s")
+    ciphertext_hex = st.session_state.crypto_bundle["ciphertext"].hex()
+    ciphertext_display = ciphertext_hex[:90] + "..." if len(ciphertext_hex) > 90 else ciphertext_hex
 
-        with m3:
-            st.metric("Mémoire", f"{memory_usage} MB")
+    st.code(ciphertext_display)
 
-        with m4:
-            st.metric("Ciphertext", f"{ciphertext_size} octets")
+    dechiffrer = st.button("Déchiffrer le message")
 
-        st.markdown('<div class="section-title">Résultat IA</div>', unsafe_allow_html=True)
+    if dechiffrer:
+        start_decrypt = time.time()
 
-        if ai_result == "Normal":
-            st.markdown('<div class="status-success">Résultat : Normal</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="status-error">Résultat : Anomalie détectée</div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="section-title">Message chiffré</div>', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="section-subtitle">Affichage en hexadécimal tronqué pour rendre le ciphertext lisible.</div>',
-            unsafe_allow_html=True
+        decrypted_message = hybrid_decrypt(
+            st.session_state.crypto_bundle,
+            st.session_state.rsa_private_key,
+            st.session_state.mlkem_secret_key,
+            st.session_state.kem_number
         )
 
-        ciphertext_hex = bundle["ciphertext"].hex()
-        ciphertext_display = ciphertext_hex[:64] + "..." if len(ciphertext_hex) > 64 else ciphertext_hex
-        st.code(ciphertext_display)
+        end_decrypt = time.time()
 
-        if decrypted_message == message:
-            st.success("Le message déchiffré correspond au message original.")
-        else:
-            st.error("Le message déchiffré ne correspond pas au message original.")
+        decrypt_time = round(end_decrypt - start_decrypt, 6)
 
+        st.session_state.decrypted_message = decrypted_message
+        st.session_state.decrypt_time = decrypt_time
+        st.session_state.message_decrypted = True
+
+
+if st.session_state.message_decrypted:
+
+    st.markdown(
+        '<div class="status-success">Message déchiffré avec succès.</div>',
+        unsafe_allow_html=True
+    )
+
+    ai_result = resultat_ia_simple(
+        st.session_state.encrypt_time,
+        st.session_state.decrypt_time,
+        st.session_state.memory_usage,
+        st.session_state.ciphertext_size
+    )
+
+    st.markdown('<div class="section-title">Message déchiffré</div>', unsafe_allow_html=True)
+
+    st.markdown(
+        f"""
+        <div class="crypto-box">
+            <div class="crypto-label">Résultat du déchiffrement</div>
+            <div class="crypto-value">{st.session_state.decrypted_message}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    if st.session_state.decrypted_message == st.session_state.original_message:
+        st.success("Le message déchiffré correspond au message original.")
+    else:
+        st.error("Le message déchiffré ne correspond pas au message original.")
+
+    st.markdown('<div class="section-title">Métriques de la session</div>', unsafe_allow_html=True)
+
+    m1, m2, m3, m4 = st.columns(4)
+
+    with m1:
+        st.metric("Chiffrement", f"{st.session_state.encrypt_time} s")
+
+    with m2:
+        st.metric("Déchiffrement", f"{st.session_state.decrypt_time} s")
+
+    with m3:
+        st.metric("Mémoire", f"{st.session_state.memory_usage} MB")
+
+    with m4:
+        st.metric("Ciphertext", f"{st.session_state.ciphertext_size} octets")
+
+    st.markdown('<div class="section-title">Résultat IA</div>', unsafe_allow_html=True)
+
+    if ai_result == "Normal":
+        st.markdown('<div class="status-success">Résultat : Normal</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="status-error">Résultat : Anomalie détectée</div>', unsafe_allow_html=True)
+
+    if not st.session_state.session_saved:
         session_data = {
             "app_type": app_type,
             "priority": priority,
             "memory": memory_label,
-            "kem_level": recommended_kem,
-            "encrypt_time": encrypt_time,
-            "decrypt_time": decrypt_time,
-            "memory_usage": memory_usage,
-            "ciphertext_size": ciphertext_size,
+            "kem_level": st.session_state.selected_kem,
+            "encrypt_time": st.session_state.encrypt_time,
+            "decrypt_time": st.session_state.decrypt_time,
+            "memory_usage": st.session_state.memory_usage,
+            "ciphertext_size": st.session_state.ciphertext_size,
             "ai_result": ai_result
         }
 
         sauvegarder_session_dashboard(session_data)
+        st.session_state.session_saved = True
 
 
 # ============================================================
@@ -622,9 +758,10 @@ st.markdown(
 2. ML-KEM encapsule le secret post-quantique K1.  
 3. K1 et K2 sont fusionnés avec XOR puis HKDF.  
 4. AES-256-GCM chiffre le message final.  
-5. Les métriques sont enregistrées.  
-6. Isolation Forest détecte les anomalies.  
-7. Decision Tree recommande le niveau ML-KEM optimal.
+5. Le bouton de déchiffrement utilise les clés conservées temporairement dans la session.  
+6. Les métriques sont enregistrées.  
+7. Isolation Forest détecte les anomalies.  
+8. Decision Tree recommande le niveau ML-KEM optimal.
 """
 )
 
@@ -671,7 +808,7 @@ afficher_sessions_precedentes()
 st.markdown(
     """
     <div class="footer">
-        HPQS-AI — Dashboard Streamlit
+        HPQS-AI — Dashboard Streamlit | Module 5 | Salma A + Nabila B
     </div>
     """,
     unsafe_allow_html=True

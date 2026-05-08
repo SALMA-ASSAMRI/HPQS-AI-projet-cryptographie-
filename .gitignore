@@ -24,3 +24,13 @@ anomaly_detection_backup.py
 metrics_collector_backup.py
 optimizer_model_backup.py
 dashboard_sessions.csv
+venv/
+venv_hpqs/
+__pycache__/
+*.pyc
+app_backup.py
+app_backup_design.py
+anomaly_detection_backup.py
+metrics_collector_backup.py
+optimizer_model_backup.py
+dashboard_sessions.csv
