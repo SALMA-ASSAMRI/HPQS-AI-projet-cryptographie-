@@ -25,7 +25,7 @@ st.set_page_config(
 
 
 # ============================================================
-# CSS — STYLE SIMPLE, ÉLÉGANT, SANS CARTES VIDES
+# STYLE CSS
 # ============================================================
 
 st.markdown(
