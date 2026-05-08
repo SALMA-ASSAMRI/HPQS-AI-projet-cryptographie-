@@ -1,7 +1,7 @@
 # ============================================================
 # anomaly_detection.py — Module 3
 # Projet HPQS-AI — Détection d'anomalies avec Isolation Forest
-# Coéquipier A : chargement, features, scaler, entraînement, sauvegarde
+# Salma A : chargement, features, scaler, entraînement, sauvegarde
 # Nabila B : prédiction, anomaly_score, affichage anomalies, predict_anomaly()
 # ============================================================
 
@@ -101,14 +101,14 @@ def train_isolation_forest(df):
 
 
 # ============================================================
-# PARTIE B — CHARGER LE MODÈLE
+# PARTIE B — CHARGER LE MODÈLE ET LE SCALER
 # ============================================================
 
 def load_model_and_scaler():
     """
     Personne B :
     Charge le modèle Isolation Forest et le scaler sauvegardés.
-    Si les fichiers n'existent pas, on entraîne automatiquement.
+    Si les fichiers n'existent pas, le modèle est entraîné automatiquement.
     """
 
     if os.path.exists(MODEL_FILE) and os.path.exists(SCALER_FILE):
@@ -128,7 +128,7 @@ def load_model_and_scaler():
 
 
 # ============================================================
-# PARTIE B — AJOUTER anomaly_score AU DATAFRAME
+# PARTIE B — DÉTECTION DES ANOMALIES
 # ============================================================
 
 def detect_anomalies(df, model, scaler):
@@ -137,7 +137,7 @@ def detect_anomalies(df, model, scaler):
     Prédit les anomalies sur toutes les sessions de metrics.csv.
 
     Isolation Forest retourne :
-    1  = normal
+    1  = session normale
     -1 = anomalie
     """
 
@@ -165,6 +165,11 @@ def show_anomalies(df):
     """
     Personne B :
     Affiche les lignes détectées comme anomalies.
+
+    Nouvelle modification :
+    On affiche aussi anomaly_prediction pour voir la valeur brute du modèle :
+    -1 = Anomalie
+     1 = Normal
     """
 
     anomalies = df[df["anomaly_prediction"] == -1]
@@ -178,11 +183,14 @@ def show_anomalies(df):
             "kem_level",
             "rsa_level",
             "status",
+            "anomaly_prediction",
             "anomaly_score",
             "ai_result"
         ]
 
-        existing_columns = [col for col in columns_to_show if col in anomalies.columns]
+        existing_columns = [
+            col for col in columns_to_show if col in anomalies.columns
+        ]
 
         print(anomalies[existing_columns].to_string(index=False))
 
@@ -190,7 +198,7 @@ def show_anomalies(df):
 
 
 # ============================================================
-# PARTIE B — CALCULER NOMBRE D'ANOMALIES / TOTAL
+# PARTIE B — RÉSUMÉ DES ANOMALIES
 # ============================================================
 
 def anomaly_summary(df):
@@ -216,7 +224,7 @@ def anomaly_summary(df):
 
 
 # ============================================================
-# PARTIE B — predict_anomaly(session_data) → str
+# PARTIE B — PRÉDICTION SUR UNE NOUVELLE SESSION
 # ============================================================
 
 def predict_anomaly(session_data):
@@ -225,7 +233,11 @@ def predict_anomaly(session_data):
     Prédit si une nouvelle session est normale ou anormale.
 
     session_data doit contenir :
-    keygen_time, encrypt_time, decrypt_time, memory_usage, ciphertext_size
+    - keygen_time
+    - encrypt_time
+    - decrypt_time
+    - memory_usage
+    - ciphertext_size
 
     Retourne :
     "Normal" ou "Anomalie"
@@ -246,27 +258,27 @@ def predict_anomaly(session_data):
     prediction = model.predict(X_scaled)[0]
     score = model.decision_function(X_scaled)[0]
 
-    if prediction == -1:
-        result = "Anomalie"
-    else:
-        result = "Normal"
+    result = "Anomalie" if prediction == -1 else "Normal"
 
     print("\nTest d'une nouvelle session :")
     print(session_data)
-    print(f"Résultat IA    : {result}")
-    print(f"Anomaly score : {round(score, 6)}")
+    print(f"Anomaly prediction : {prediction}")
+    print(f"Résultat IA        : {result}")
+    print(f"Anomaly score      : {round(score, 6)}")
 
     return result
 
 
 # ============================================================
-# PARTIE B — TESTS AVEC VALEURS EXTRÊMES
+# PARTIE B — TESTS AVEC VALEURS SIMULÉES
 # ============================================================
 
 def test_extreme_values():
     """
     Personne B :
-    Teste predict_anomaly() avec une session normale et une session extrême.
+    Teste predict_anomaly() avec :
+    - une session normale simulée
+    - une session extrême simulée
     """
 
     normal_session = {
@@ -306,23 +318,23 @@ if __name__ == "__main__":
     # 1. Charger les métriques
     df = load_metrics(METRICS_FILE)
 
-    # 2. Entraîner ou charger modèle + scaler
+    # 2. Charger ou entraîner le modèle + scaler
     model, scaler = load_model_and_scaler()
 
     # 3. Détecter les anomalies sur metrics.csv
     df_result = detect_anomalies(df, model, scaler)
 
-    # 4. Afficher les anomalies
-    anomalies = show_anomalies(df_result)
+    # 4. Afficher les anomalies avec anomaly_prediction
+    show_anomalies(df_result)
 
-    # 5. Résumé
+    # 5. Afficher le résumé
     anomaly_summary(df_result)
 
-    # 6. Sauvegarder le CSV enrichi avec anomaly_score
+    # 6. Sauvegarder le CSV enrichi
     df_result.to_csv("metrics_with_anomalies.csv", index=False)
     print("\nFichier sauvegardé : metrics_with_anomalies.csv")
 
-    # 7. Tester avec valeurs extrêmes
+    # 7. Tester avec des valeurs simulées
     test_extreme_values()
 
     print("\nMODULE 3 COMPLET : OK")
