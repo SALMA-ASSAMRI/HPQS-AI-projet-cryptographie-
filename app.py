@@ -808,7 +808,7 @@ afficher_sessions_precedentes()
 st.markdown(
     """
     <div class="footer">
-        HPQS-AI — Dashboard Streamlit | Module 5 | Salma A + Nabila B
+        HPQS-AI — Dashboard Streamlit
     </div>
     """,
     unsafe_allow_html=True
