@@ -1,0 +1,25 @@
+Rapport Module 4 — Optimisation intelligente ML-KEM
+============================================================
+
+Objectif :
+Le but du Module 4 est de recommander automatiquement le meilleur niveau ML-KEM selon le contexte d'utilisation.
+
+Meilleur modèle :
+Decision Tree
+
+Accuracy :
+Decision Tree accuracy : 1.00
+Random Forest accuracy : 1.00
+Best accuracy : 1.00
+
+Feature importance :
+app_type : 0.3961
+priority : 0.1233
+memory_mb : 0.4806
+
+Tests de recommandation :
+IoT | Performance | Faible → ML-KEM-512
+Mobile | Équilibre | Moyenne → ML-KEM-768
+Web | Équilibre | Moyenne → ML-KEM-768
+Cloud | Sécurité maximale | Élevée → ML-KEM-1024
+Banque | Sécurité maximale | Élevée → ML-KEM-1024
